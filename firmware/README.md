@@ -7,10 +7,10 @@ Normál esetben 3600 másodpercet (1 órát), alacsony akkufeszültségnél
 86400 másodpercet (1 napot) alszik. A mérés és a küldés néhány másodperce
 hozzáadódik ehhez az időközhöz.
 
-A Node-RED / InfluxDB / Grafana beüzemeléséhez a gyökérkönyvtári `.env`
-aktuális `NORMAL_SLEEP_SECONDS` értéke ideiglenesen **30** (30 másodperc).
-Visszaállításhoz írd át 3600-ra, majd fordítsd újra és töltsd fel.
-Az alacsony akkufeszültségnél alkalmazott napi ütemezés változatlan.
+A Node-RED / InfluxDB / Grafana beüzemeléséhez használt ideiglenes
+30 másodperces ütemet visszaállítottuk: a gyökérkönyvtári `.env`
+`NORMAL_SLEEP_SECONDS` értéke **3600** (1 óra). Az alacsony
+akkufeszültségnél alkalmazott napi ütemezés változatlan.
 Az akkufeszültség mérése BME280 nélkül is működik.
 
 | Topic | Tartalom |

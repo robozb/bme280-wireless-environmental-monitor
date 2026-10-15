@@ -34,7 +34,7 @@ A `COM7` ennek a gépnek a korábban ellenőrzött portja; másik gépen vagy ú
 
 ## Alvás és adatküldés
 
-A firmware mér, elküldi az adatokat, majd deep sleepbe lép. A mintakonfiguráció normál alvása 3600 másodperc; a beüzemelés során az eszközre **30 másodperces** alvás került. Az alvási időhöz az ébren töltött mérési és kapcsolódási idő hozzáadódik.
+A firmware mér, elküldi az adatokat, majd deep sleepbe lép. A normál alvás beállítása **3600 másodperc (1 óra)**; a beüzemeléshez használt ideiglenes 30 másodperces ütemet visszaállítottuk. Az alvási időhöz az ébren töltött mérési és kapcsolódási idő hozzáadódik.
 
 3,30 V-nál vagy alatta napi egyszeri ébredésre vált. A normál ütemre 3,50 V-tól tér vissza. Ezek és az ütemezés a `.env` fájlban állíthatók.
 

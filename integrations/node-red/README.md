@@ -23,8 +23,9 @@ A kapott minta a `matrix_billentyuzet/#` topicokat dolgozza fel,
 3. Az Influx node-ban ellenőrizd az orgot (**WFS**) és a bucketet (**AksisBME**).
    A meglévő Influx-tokennek írási jog kell ehhez a buckethez is. A token
    nem része az exportnak; ne másold bele a flow JSON-ba.
-4. **Deploy**, majd várd meg a következő ébredést (jelenleg kb. 30 másodperc,
-   plusz a mérés és a csatlakozás ideje).
+4. **Deploy**, majd várd meg a következő ébredést (normál esetben 1 óra,
+   plusz a mérés és a csatlakozás ideje; alacsony akkufeszültségnél 1 nap).
+   A beüzemeléshez használt ideiglenes 30 másodperces ütemet visszaállítottuk.
 5. Influx Data Explorerben futtasd a `check-data.flux` lekérdezést. A tényleges
    tárolást ez igazolja; az előkészítő function zöld jelzése és debug ága
    csak a payload összeállítását jelzi. Az írási/parser hibák az aktív
