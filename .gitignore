@@ -1,0 +1,10 @@
+.build/
+.tools/
+.history/
+backups/
+.env
+.env.*
+!.env.example
+__pycache__/
+firmware/battery_mqtt/secrets.h
+

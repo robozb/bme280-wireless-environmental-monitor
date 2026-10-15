@@ -1,0 +1,222 @@
+[
+  {
+    "id": "a6b1280e10000001",
+    "type": "tab",
+    "label": "AksisBME → InfluxDB",
+    "disabled": false,
+    "info": "AksisBME bucket, WFS org. Uses existing Mosquitto and Influx v2 config nodes from the supplied Matrix flow. Retained snapshots are skipped; wait for the next 5-minute wake. No Telegram nodes.",
+    "env": []
+  },
+  {
+    "id": "a6b1280e10000100",
+    "type": "mqtt in",
+    "z": "a6b1280e10000001",
+    "name": "XIAO: battery",
+    "topic": "bme280esp32/battery/voltage",
+    "qos": "0",
+    "datatype": "auto-detect",
+    "broker": "b2b2b2b2b2b2b2b2",
+    "nl": false,
+    "rap": true,
+    "rh": 0,
+    "inputs": 0,
+    "x": 180,
+    "y": 140,
+    "wires": [
+      [
+        "a6b1280e10000002"
+      ]
+    ]
+  },
+  {
+    "id": "a6b1280e10000101",
+    "type": "mqtt in",
+    "z": "a6b1280e10000001",
+    "name": "XIAO: sensor",
+    "topic": "bme280esp32/sensor",
+    "qos": "0",
+    "datatype": "auto-detect",
+    "broker": "b2b2b2b2b2b2b2b2",
+    "nl": false,
+    "rap": true,
+    "rh": 0,
+    "inputs": 0,
+    "x": 180,
+    "y": 205,
+    "wires": [
+      [
+        "a6b1280e10000002"
+      ]
+    ]
+  },
+  {
+    "id": "a6b1280e10000102",
+    "type": "mqtt in",
+    "z": "a6b1280e10000001",
+    "name": "XIAO: wifi",
+    "topic": "bme280esp32/wifi",
+    "qos": "0",
+    "datatype": "auto-detect",
+    "broker": "b2b2b2b2b2b2b2b2",
+    "nl": false,
+    "rap": true,
+    "rh": 0,
+    "inputs": 0,
+    "x": 180,
+    "y": 270,
+    "wires": [
+      [
+        "a6b1280e10000002"
+      ]
+    ]
+  },
+  {
+    "id": "a6b1280e10000103",
+    "type": "mqtt in",
+    "z": "a6b1280e10000001",
+    "name": "XIAO: status",
+    "topic": "bme280esp32/battery/status",
+    "qos": "0",
+    "datatype": "auto-detect",
+    "broker": "b2b2b2b2b2b2b2b2",
+    "nl": false,
+    "rap": true,
+    "rh": 0,
+    "inputs": 0,
+    "x": 180,
+    "y": 335,
+    "wires": [
+      [
+        "a6b1280e10000002"
+      ]
+    ]
+  },
+  {
+    "id": "a6b1280e10000104",
+    "type": "mqtt in",
+    "z": "a6b1280e10000001",
+    "name": "XIAO: sleep",
+    "topic": "bme280esp32/sleep",
+    "qos": "0",
+    "datatype": "auto-detect",
+    "broker": "b2b2b2b2b2b2b2b2",
+    "nl": false,
+    "rap": true,
+    "rh": 0,
+    "inputs": 0,
+    "x": 180,
+    "y": 400,
+    "wires": [
+      [
+        "a6b1280e10000002"
+      ]
+    ]
+  },
+  {
+    "id": "a6b1280e10000002",
+    "type": "function",
+    "z": "a6b1280e10000001",
+    "name": "Akku + BME + Wi-Fi + sleep → Influx",
+    "func": "const TOPICS = {\n    \"bme280esp32/battery/voltage\": \"battery\",\n    \"bme280esp32/sensor\": \"sensor\",\n    \"bme280esp32/wifi\": \"wifi\",\n    \"bme280esp32/battery/status\": \"status\",\n    \"bme280esp32/sleep\": \"sleep\"\n};\n\n// Function-node body. TOPICS is prepended by tools/generate_nodered_flow.py.\n// Do not give retained snapshots a new measurement timestamp.\nif (msg.retain === true) {\n    node.status({fill: \"grey\", shape: \"ring\", text: \"Retained kihagyva; új mérésre vár\"});\n    return null;\n}\nif (!Object.prototype.hasOwnProperty.call(TOPICS, msg.topic)) return null;\nconst type = TOPICS[msg.topic];\n\ntry {\n    const original = Buffer.isBuffer(msg.payload) ? msg.payload.toString(\"utf8\") : msg.payload;\n    const raw = typeof original === \"string\" ? original : JSON.stringify(original);\n    if (typeof raw !== \"string\" || !raw.length) throw new Error(\"Üres payload\");\n    const fields = {mqtt_topic: String(msg.topic), raw_payload: raw};\n\n    function number(value, name) {\n        if (typeof value === \"string\" && value.trim() !== \"\") value = Number(value);\n        if (typeof value !== \"number\" || !Number.isFinite(value)) {\n            throw new Error(\"Nem véges szám: \" + name);\n        }\n        return value;\n    }\n    function object() {\n        const value = typeof original === \"string\" ? JSON.parse(original) : original;\n        if (!value || typeof value !== \"object\" || Array.isArray(value)) {\n            throw new Error(\"JSON objektum szükséges\");\n        }\n        return value;\n    }\n    function copyNumber(data, key, destination = key, required = false) {\n        if (Object.prototype.hasOwnProperty.call(data, key)) {\n            fields[destination] = number(data[key], key);\n        } else if (required) {\n            throw new Error(\"Hiányzó mező: \" + key);\n        }\n    }\n    function copyString(data, key) {\n        if (Object.prototype.hasOwnProperty.call(data, key)) {\n            if (typeof data[key] !== \"string\") throw new Error(\"Nem szöveg: \" + key);\n            fields[key] = data[key];\n        }\n    }\n    function copyBoolean(data, key, destination) {\n        if (typeof data[key] !== \"boolean\") throw new Error(\"Nem logikai érték: \" + key);\n        fields[destination] = data[key];\n    }\n\n    if (type === \"battery\") {\n        fields.vbat = number(original, \"vbat\");\n    } else if (type === \"sensor\") {\n        const data = object();\n        copyBoolean(data, \"ok\", \"sensor_ok\");\n        // A failed reading must never be converted into zero temperature/humidity.\n        if (data.ok) {\n            copyNumber(data, \"t\", \"temperature_c\", true);\n            copyNumber(data, \"h\", \"humidity_pct\", true);\n            copyNumber(data, \"p\", \"pressure_hpa\", true);\n        }\n    } else if (type === \"wifi\") {\n        const data = object();\n        copyNumber(data, \"rssi_dbm\", \"rssi_dbm\", true);\n        for (const key of [\"channel\", \"uptime_s\", \"wifi_connected_s\", \"wifi_reconnects\", \"mqtt_reconnects\", \"wake_count\"]) {\n            copyNumber(data, key);\n        }\n        for (const key of [\"ssid\", \"bssid\", \"ip\", \"gateway\", \"mac\"]) copyString(data, key);\n    } else if (type === \"status\") {\n        const state = typeof original === \"string\" ? original.trim() : \"\";\n        const codes = {offline: 0, sleeping: 1, online: 2};\n        if (!Object.prototype.hasOwnProperty.call(codes, state)) throw new Error(\"Ismeretlen állapot\");\n        fields.state = state;\n        fields.state_code = codes[state];\n    } else if (type === \"sleep\") {\n        const data = object();\n        copyNumber(data, \"sleep_s\", \"sleep_s\", true);\n        copyBoolean(data, \"low_battery\", \"low_battery\");\n        copyNumber(data, \"battery_v\");\n        copyNumber(data, \"wake_count\");\n        copyString(data, \"wake_reason\");\n        copyString(data, \"cycle_id\");\n    }\n\n    // The device has no UTC measurement timestamp. Archive server receive time.\n    // Keep online -> sleeping events distinct even if both arrive in one ms.\n    const clocks = context.get(\"aksisbmeLastTimes\") || {};\n    const timestamp = Math.max(Date.now(), (clocks[type] || 0) + 1);\n    clocks[type] = timestamp;\n    context.set(\"aksisbmeLastTimes\", clocks);\n    fields.time = timestamp; // Special timestamp field in node-red-contrib-influxdb 0.7.0.\n    fields.received_at = new Date(timestamp).toISOString();\n\n    msg.measurement = \"aksis_bme\";\n    msg.payload = [fields, {device: \"bme280esp32\", type: type}];\n    node.status({fill: \"green\", shape: \"dot\", text: type + \" → AksisBME\"});\n    return msg;\n} catch (error) {\n    node.status({fill: \"red\", shape: \"ring\", text: \"Hibás \" + type + \" adat\"});\n    node.error(\"AksisBME: \" + error.message, msg);\n    return null;\n}\n",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 540,
+    "y": 270,
+    "wires": [
+      [
+        "a6b1280e10000003",
+        "a6b1280e10000004"
+      ]
+    ]
+  },
+  {
+    "id": "a6b1280e10000003",
+    "type": "influxdb out",
+    "z": "a6b1280e10000001",
+    "influxdb": "b0b0b0b0b0b0b0b0",
+    "name": "InfluxDB: AksisBME",
+    "measurement": "",
+    "precision": "",
+    "retentionPolicy": "",
+    "database": "",
+    "precisionV18FluxV20": "ms",
+    "retentionPolicyV18Flux": "",
+    "org": "WFS",
+    "bucket": "AksisBME",
+    "x": 920,
+    "y": 240,
+    "wires": []
+  },
+  {
+    "id": "a6b1280e10000004",
+    "type": "debug",
+    "z": "a6b1280e10000001",
+    "name": "AksisBME: előkészített Influx pont (nem írásigazolás)",
+    "active": false,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "x": 990,
+    "y": 320,
+    "wires": []
+  },
+  {
+    "id": "a6b1280e10000005",
+    "type": "catch",
+    "z": "a6b1280e10000001",
+    "name": "AksisBME parser / Influx hibák",
+    "scope": [
+      "a6b1280e10000002",
+      "a6b1280e10000003"
+    ],
+    "uncaught": false,
+    "x": 250,
+    "y": 530,
+    "wires": [
+      [
+        "a6b1280e10000006"
+      ]
+    ]
+  },
+  {
+    "id": "a6b1280e10000006",
+    "type": "debug",
+    "z": "a6b1280e10000001",
+    "name": "AksisBME HIBA",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "x": 620,
+    "y": 530,
+    "wires": []
+  },
+  {
+    "id": "a6b1280e10000007",
+    "type": "comment",
+    "z": "a6b1280e10000001",
+    "name": "Meglévő Mosquitto + Influx v2 kapcsolat; bucket: AksisBME, org: WFS",
+    "info": "Config references intentionally reuse the existing supplied Matrix flow. Select your existing config nodes if a connection is missing after import. The Influx token needs write access to AksisBME. No token is embedded here.",
+    "x": 420,
+    "y": 65,
+    "wires": []
+  },
+  {
+    "id": "a6b1280e10000008",
+    "type": "comment",
+    "z": "a6b1280e10000001",
+    "name": "Retained kihagyva → az első új adat a következő ébredéskor érkezik",
+    "info": "Timestamp is the Node-RED receive time, not the original retained message publish time. Retained snapshots are skipped to prevent old values appearing as fresh measurements on reconnect or deploy.",
+    "x": 490,
+    "y": 450,
+    "wires": []
+  }
+]

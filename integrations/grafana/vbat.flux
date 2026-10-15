@@ -1,0 +1,7 @@
+from(bucket: "AksisBME")
+  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)
+  |> filter(fn: (r) => r["_measurement"] == "aksis_bme")
+  |> filter(fn: (r) => r["_field"] == "vbat")
+  |> filter(fn: (r) => r["type"] == "battery")
+  |> filter(fn: (r) => r["device"] == "bme280esp32")
+  |> keep(columns: ["_time", "_value"])

@@ -1,0 +1,101 @@
+{
+  "id": 3,
+  "type": "timeseries",
+  "title": "BME280 – páratartalom, hőmérséklet és légnyomás",
+  "description": "A fotós doboz BME280 mérései. A három görbe külön skálát és mértékegységet használ: % relatív páratartalom, °C és hPa helyi légnyomás. Az alsó táblázat a kijelölt időtartomány utolsó, minimum és maximum értékeit mutatja. Az időbélyeg a Node-RED adatfogadásának ideje.",
+  "pluginVersion": "12.2.0",
+  "datasource": {"type": "influxdb", "uid": "cezmp4srm3bpcd"},
+  "gridPos": {"h": 14, "w": 24, "x": 0, "y": 12},
+  "fieldConfig": {
+    "defaults": {
+      "color": {"mode": "palette-classic"},
+      "decimals": 2,
+      "noValue": "Nincs adat",
+      "mappings": [],
+      "thresholds": {
+        "mode": "absolute",
+        "steps": [{"color": "green", "value": null}]
+      },
+      "custom": {
+        "axisBorderShow": true,
+        "axisCenteredZero": false,
+        "axisColorMode": "series",
+        "axisLabel": "",
+        "axisPlacement": "auto",
+        "drawStyle": "line",
+        "fillOpacity": 0,
+        "gradientMode": "none",
+        "hideFrom": {"legend": false, "tooltip": false, "viz": false},
+        "insertNulls": false,
+        "lineInterpolation": "linear",
+        "lineWidth": 2,
+        "pointSize": 4,
+        "scaleDistribution": {"type": "linear"},
+        "showPoints": "auto",
+        "spanNulls": false,
+        "stacking": {"group": "A", "mode": "none"},
+        "thresholdsStyle": {"mode": "off"}
+      }
+    },
+    "overrides": [
+      {
+        "matcher": {"id": "byName", "options": "humidity_pct"},
+        "properties": [
+          {"id": "displayName", "value": "Páratartalom"},
+          {"id": "unit", "value": "percent"},
+          {"id": "color", "value": {"mode": "fixed", "fixedColor": "blue"}},
+          {"id": "custom.axisPlacement", "value": "left"},
+          {"id": "custom.axisLabel", "value": "Relatív páratartalom (%)"},
+          {"id": "min", "value": 0},
+          {"id": "max", "value": 100}
+        ]
+      },
+      {
+        "matcher": {"id": "byName", "options": "temperature_c"},
+        "properties": [
+          {"id": "displayName", "value": "Hőmérséklet"},
+          {"id": "unit", "value": "celsius"},
+          {"id": "color", "value": {"mode": "fixed", "fixedColor": "orange"}},
+          {"id": "custom.axisPlacement", "value": "right"},
+          {"id": "custom.axisLabel", "value": "Hőmérséklet (°C)"}
+        ]
+      },
+      {
+        "matcher": {"id": "byName", "options": "pressure_hpa"},
+        "properties": [
+          {"id": "displayName", "value": "Légnyomás"},
+          {"id": "unit", "value": "pressurehpa"},
+          {"id": "color", "value": {"mode": "fixed", "fixedColor": "purple"}},
+          {"id": "custom.axisPlacement", "value": "right"},
+          {"id": "custom.axisLabel", "value": "Helyi légnyomás (hPa)"}
+        ]
+      }
+    ]
+  },
+  "options": {
+    "legend": {
+      "calcs": ["lastNotNull", "min", "max"],
+      "displayMode": "table",
+      "placement": "bottom",
+      "showLegend": true
+    },
+    "tooltip": {"hideZeros": false, "mode": "multi", "sort": "none"}
+  },
+  "targets": [
+    {
+      "datasource": {"type": "influxdb", "uid": "cezmp4srm3bpcd"},
+      "refId": "A",
+      "query": "from(bucket: \"AksisBME\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"aksis_bme\")\n  |> filter(fn: (r) => r[\"type\"] == \"sensor\" and r[\"device\"] == \"bme280esp32\")\n  |> filter(fn: (r) => r[\"_field\"] == \"humidity_pct\")\n  |> keep(columns: [\"_time\", \"_value\"])\n  |> rename(columns: {_value: \"humidity_pct\"})"
+    },
+    {
+      "datasource": {"type": "influxdb", "uid": "cezmp4srm3bpcd"},
+      "refId": "B",
+      "query": "from(bucket: \"AksisBME\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"aksis_bme\")\n  |> filter(fn: (r) => r[\"type\"] == \"sensor\" and r[\"device\"] == \"bme280esp32\")\n  |> filter(fn: (r) => r[\"_field\"] == \"temperature_c\")\n  |> keep(columns: [\"_time\", \"_value\"])\n  |> rename(columns: {_value: \"temperature_c\"})"
+    },
+    {
+      "datasource": {"type": "influxdb", "uid": "cezmp4srm3bpcd"},
+      "refId": "C",
+      "query": "from(bucket: \"AksisBME\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"aksis_bme\")\n  |> filter(fn: (r) => r[\"type\"] == \"sensor\" and r[\"device\"] == \"bme280esp32\")\n  |> filter(fn: (r) => r[\"_field\"] == \"pressure_hpa\")\n  |> keep(columns: [\"_time\", \"_value\"])\n  |> rename(columns: {_value: \"pressure_hpa\"})"
+    }
+  ]
+}
